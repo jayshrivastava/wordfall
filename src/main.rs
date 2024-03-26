@@ -1,10 +1,9 @@
 use leptos::*;
 use stylance::import_crate_style;
-use leptos_dom::View::Text;
 
+import_crate_style!(styles, "./src/styles.module.scss");
 
-import_crate_style!(my_style, "./src/styles.module.scss");
-
+// NB: The width variable exists separately in scss as well.
 const GRID_WIDTH: usize = 10;
 const GRID_HEIGHT: usize = 20;
 #[derive(Clone)]
@@ -12,13 +11,27 @@ struct BlockState {
    val: &'static str
 }
 
-impl IntoView for BlockState {
-    fn into_view(self) -> View {
-        View::Text(leptos_dom::Text::new(Oco::from(self.val)))
+impl BlockState {
+    // This is a method
+    // `&self` is sugar for `self: &Self`, where `Self` is the type of the
+    // caller object. In this case `Self` = `Rectangle`
+    fn render(&self) -> impl IntoView {
+       view! {
+           <div class=styles::block>
+                <p class=styles::block_text> {self.val} </p>
+           </div>
+       }
     }
 }
 
-fn newBlockState() -> BlockState {
+
+// impl IntoView for BlockState {
+//     fn into_view(self) -> View {
+//         View::Text(leptos_dom::Text::new(Oco::from(self.val)))
+//     }
+// }
+
+fn new_block_state() -> BlockState {
     return BlockState{
         val: "F",
     }
@@ -32,45 +45,26 @@ fn App() -> impl IntoView {
         set_block.push(Vec::with_capacity(GRID_WIDTH));
         get_block.push(Vec::with_capacity(GRID_WIDTH));
         for j in 0..GRID_WIDTH {
-            let (get, set) = create_signal(newBlockState());
+            let (get, set) = create_signal(new_block_state());
             set_block[i].push(set);
             get_block[i].push(get);
         }
     }
 
-    let values = vec![0, 1, 2];
     view! {
-    // this will just render "012"
-    <p>{values.clone()}</p>
-    // or we can wrap them in <li>
-    <ul>
+    <div class=styles::grid_container>
         {get_block.into_iter()
             .map(|row| view! {
-            <ul>
+            <div class=styles::grid_row>
                 {row.into_iter()
-                .map(|get| view! { <li>{get()}</li>})
+                .map(|get| view! { <div>{get().render()}</div>})
                 .collect_view()}
-            </ul>
+            </div>
         })
             .collect_view()}
-    </ul>
-}
+    </div>
+    }
 
-    // let (get_count, set_count) = create_signal(0);
-    //
-    // view! {
-    //     <button
-    //         class=my_style::test
-    //         on:click=move |_| {
-    //             // on stable, this is set_count.set(3);
-    //             set_count(3);
-    //         }
-    //     >
-    //         "Click me: "
-    //         // on stable, this is move || count.get();
-    //         {move || get_count()}
-    //     </button>
-    // }
 }
 
 
