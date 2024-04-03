@@ -1,5 +1,31 @@
+$grid-width: 10;
+$box-size: 15px;
+
 body {
   height: 100%;
   width: 100%;
   margin: 0;
+  background: antiquewhite;
+}
+
+.grid-container-container {
+  margin: 0 auto;
+  width: $grid-width * $box-size*2.5;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat($grid-width, $box-size*2.5); /* Adjust the width of columns as needed */
+}
+
+.grid-item {
+  border: 1px solid black;
+  border-radius: 5px;
+
+  padding: 10px;
+  text-align: center;
+  width: $box-size;
+  height: $box-size;
+
+  font-family: Arial, Helvetica, sans-serif;
 }

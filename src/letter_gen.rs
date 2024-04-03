@@ -1,5 +1,7 @@
 use rand::Rng;
-struct LetterGenerator {}
+
+#[derive(Copy, Clone)]
+pub struct LetterGenerator {}
 
 pub const LETTERS: [&str; 26] = [
    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
@@ -7,11 +9,6 @@ pub const LETTERS: [&str; 26] = [
 ];
 
 impl LetterGenerator {
-
-   fn new() -> LetterGenerator {
-     LetterGenerator{
-     }
-   }
    pub fn next_letter(self) -> &'static str{
       LETTERS[ rand::thread_rng().gen_range(0..=25)]
    }
