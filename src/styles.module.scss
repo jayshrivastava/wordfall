@@ -47,16 +47,17 @@ body {
   margin-top: 10px;
   margin-left: auto;
   margin-right: auto;
-  width: 150px;
+  width: 170px;
 
   display: grid;
   grid-template-columns: repeat(4, 25px);
-  gap: 15px;
+  gap: 20px;
 }
 
 .arrow-button{
   text-align: center;
-  width: 25px;
-  height: 25px;
+  width: 35px;
+  height: 35px;
   font-size: 25px;
+  padding: 0;
 }

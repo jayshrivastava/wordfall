@@ -155,10 +155,11 @@ fn App() -> impl IntoView {
                 </For>
             </div>
             <div class=styles::arrow_container>
-            <div class=styles::arrow_button> "◀️"</div>
-            <div class=styles::arrow_button> "🔽" </div>
-            <div class=styles::arrow_button> "⏬" </div>
-            <div class=styles::arrow_button> "▶️" </div>
+            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_A); }> "<"</button>
+            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_S); }> "."</button>
+            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_W); }> "^"</button>
+            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_D); }> ">"</button>
+
             </div>
         </div>
     }
