@@ -1,4 +1,4 @@
-$grid-width: 10;
+$grid-width: 9;
 $box-size: 15px;
 
 body {
@@ -8,10 +8,23 @@ body {
   background: antiquewhite;
 }
 
+.header {
+  margin: 1% auto;
+  width: 15%;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 .grid-container-container {
   margin: 0 auto;
   width: $grid-width * $box-size*2.5;
 }
+
+//@media screen and (max-width: 767px) {
+//  .grid-container-container {
+//    width: 100%; /* Set width to 100% for mobile devices */
+//  }
+//}
 
 .grid-container {
   display: grid;
@@ -28,4 +41,22 @@ body {
   height: $box-size;
 
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.arrow-container {
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 150px;
+
+  display: grid;
+  grid-template-columns: repeat(4, 25px);
+  gap: 15px;
+}
+
+.arrow-button{
+  text-align: center;
+  width: 25px;
+  height: 25px;
+  font-size: 25px;
 }
