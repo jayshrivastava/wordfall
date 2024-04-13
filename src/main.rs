@@ -13,7 +13,7 @@ const GRID_WIDTH: usize = 9;
 const GRID_HEIGHT: usize = 11;
 const GRID_SIZE: usize =GRID_WIDTH * GRID_HEIGHT;
 
-const EMPTY:  &'static str = " ";
+const EMPTY:  char = ' ';
 
 const TICK: u64 = 1;
 
@@ -30,11 +30,11 @@ const ARR_U: &str = "ArrowUp";
 
 #[derive(Clone)]
 struct BlockState {
-    val: RwSignal<&'static str>,
+    val: RwSignal<char>,
     key: u64,
 }
 
-fn new_block_state(val :&'static str) -> BlockState {
+fn new_block_state(val: char) -> BlockState {
     return BlockState{
         val: create_rw_signal(val),
         key: random(),
