@@ -292,19 +292,19 @@ fn App() -> impl IntoView {
             </div>
             <div class=styles::arrow_container>
                 <button class=styles::arrow_button
-                    on:click=move |_| { handle_key_press(KEY_A); }
+                    on:mouseup=move |_| { handle_key_press(KEY_A); }
                     on:touchend=move |_| { handle_key_press(KEY_A); }
                 > "⬅️"</button>
                 <button class=styles::arrow_button
-                    on:click=move |_| { handle_key_press(KEY_S); }
+                    on:mouseup=move |_| { handle_key_press(KEY_S); }
                     on:touchend=move |_| { handle_key_press(KEY_S); }
                 > "⬇️"</button>
                 <button class=styles::arrow_button
-                    on:click=move |_| { handle_key_press(KEY_W); }
+                    on:mouseup=move |_| { handle_key_press(KEY_W); }
                     on:touchend=move |_| { handle_key_press(KEY_W); }
                 > "⏬"</button>
                 <button class=styles::arrow_button
-                    on:click=move |_| { handle_key_press(KEY_D); }
+                    on:mouseup=move |_| { handle_key_press(KEY_D); }
                     on:touchend=move |_| { handle_key_press(KEY_D); }
                 > "➡️"</button>
             </div>
