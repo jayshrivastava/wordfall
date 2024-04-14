@@ -9,7 +9,41 @@ pub const LETTERS: [char; 26] = [
 ];
 
 impl LetterGenerator {
-   pub fn next_letter(self) -> char{
+   pub fn new() -> LetterGenerator {
+      LetterGenerator{
+      }
+   }
+}
+
+impl Generator for LetterGenerator {
+   fn next_letter (&mut self) -> char{
       LETTERS[ rand::thread_rng().gen_range(0..=25)]
    }
+}
+
+
+const TEST_LETTERS: &str = "CATDOGANDBUTSOLDCOUNTMATH";
+#[derive(Copy, Clone)]
+pub struct TestGenerator {
+   idx: usize
+}
+
+impl TestGenerator {
+   pub fn new() -> TestGenerator {
+      TestGenerator{
+         idx: 0,
+      }
+   }
+}
+impl Generator for TestGenerator {
+
+
+   fn next_letter(&mut self) -> char{
+      self.idx += 1;
+      return TEST_LETTERS.chars().nth(self.idx - 1).unwrap()
+   }
+}
+
+pub trait Generator {
+   fn next_letter(&mut self) -> char;
 }
