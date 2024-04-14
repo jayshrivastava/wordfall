@@ -291,10 +291,22 @@ fn App() -> impl IntoView {
                 <p class=styles::next_letters>"Up Next: "{move || next_letters.get().iter().map(|&c| c.to_string()).collect::<Vec<_>>().join(", ")}</p>
             </div>
             <div class=styles::arrow_container>
-                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_A); }> "⬅️"</div>
-                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_S); }> "⬇️"</div>
-                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_W); }> "⏬"</div>
-                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_D); }> "➡️"</div>
+                <button class=styles::arrow_button
+                    on:click=move |_| { handle_key_press(KEY_A); }
+                    on:touchend=move |_| { handle_key_press(KEY_A); }
+                > "⬅️"</button>
+                <button class=styles::arrow_button
+                    on:click=move |_| { handle_key_press(KEY_S); }
+                    on:touchend=move |_| { handle_key_press(KEY_S); }
+                > "⬇️"</button>
+                <button class=styles::arrow_button
+                    on:click=move |_| { handle_key_press(KEY_W); }
+                    on:touchend=move |_| { handle_key_press(KEY_W); }
+                > "⏬"</button>
+                <button class=styles::arrow_button
+                    on:click=move |_| { handle_key_press(KEY_D); }
+                    on:touchend=move |_| { handle_key_press(KEY_D); }
+                > "➡️"</button>
             </div>
         </div>
     }
