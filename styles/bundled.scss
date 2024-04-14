@@ -8,6 +8,7 @@ body {
   background: antiquewhite;
 }
 
+// HEADER
 .header-94e563a {
   margin: 1% auto;
   width: 15%;
@@ -15,16 +16,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+// GRID
 .grid-container-container-94e563a {
   margin: 0 auto;
   width: $grid-width * $box-size*2.5;
 }
-
-//@media screen and (max-width: 767px) {
-//  .grid-container-container {
-//    width: 100%; /* Set width to 100% for mobile devices */
-//  }
-//}
 
 .grid-container-94e563a {
   display: grid;
@@ -43,6 +39,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+// NEXT LETTERS
+.next_letters-94e563a {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+// ARROWS
 .arrow-container-94e563a {
   margin-top: 10px;
   margin-left: auto;

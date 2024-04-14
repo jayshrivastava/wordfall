@@ -8,7 +8,7 @@ use leptos::*;
 use stylance::import_crate_style;
 use leptos::logging::log;
 use core::time::Duration;
-use crate::letter_gen::{Generator, LetterGenerator, TestGenerator};
+use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE};
 use crate::trie::TrieNode;
 use crate::words::WORDS;
 
@@ -18,6 +18,8 @@ import_crate_style!(styles, "./src/styles.module.scss");
 const GRID_WIDTH: usize = 9;
 const GRID_HEIGHT: usize = 11;
 const GRID_SIZE: usize =GRID_WIDTH * GRID_HEIGHT;
+
+const LOOKAHEAD: usize = 3;
 
 const EMPTY:  char = ' ';
 
@@ -57,7 +59,8 @@ fn make_block_vec(set_gen: WriteSignal<TestGenerator>) -> Vec<BlockState> {
    // Spawn the first block.
    ret[GRID_WIDTH / 2].val.update(|val|{
        set_gen.update(|g| {
-           *val = g.next_letter()
+           // Guaranteed to be words here because we just initialized the generator.
+           *val = g.next_letter().unwrap()
        })
    });
    ret
@@ -78,6 +81,13 @@ fn App() -> impl IntoView {
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
     let (checking, set_checking) = create_signal(false);
     let (t, _) = create_signal(make_trie());
+    let (next_letters, set_next_letters) = create_signal(vec![]);
+
+    create_effect(move |_| {
+        set_gen.update(|g| {
+            set_next_letters.update(|nl| *nl = g.next_n_letters(LOOKAHEAD))
+        });
+    });
 
     let spawn = move || {
         if grid.get()[GRID_WIDTH/2].val.get() != EMPTY {
@@ -88,7 +98,12 @@ fn App() -> impl IntoView {
         let _ = grid.with(|blocks| {
             blocks[GRID_WIDTH / 2].val.update(|val| {
                 set_gen.update(|g| {
-                    *val = g.next_letter()
+                    let next = g.next_letter();
+                    if next.is_none() {
+                        panic!("TODO: you won")
+                    }
+                    *val = next.unwrap();
+                    set_next_letters.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
                 })
             });
         });
@@ -155,7 +170,7 @@ fn App() -> impl IntoView {
                             trav = trav.next(blocks[j].val.get());
                             indexes.push(j);
                             // Check for words of at least length 3.
-                            if trav.terminal() && indexes.len() > 2 {
+                            if trav.terminal() && indexes.len() >= MIN_WORD_SIZE {
                                 let word = trav.get_word();
                                 indexes_final.push(indexes.clone());
                                 words.push(word);
@@ -272,12 +287,14 @@ fn App() -> impl IntoView {
                 </div>
                 </For>
             </div>
+            <div>
+                <p class=styles::next_letters>"Up Next: "{move || next_letters.get().iter().map(|&c| c.to_string()).collect::<Vec<_>>().join(", ")}</p>
+            </div>
             <div class=styles::arrow_container>
-            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_A); }> "<"</button>
-            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_S); }> "."</button>
-            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_W); }> "^"</button>
-            <button class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_D); }> ">"</button>
-
+                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_A); }> "⬅️"</div>
+                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_S); }> "⬇️"</div>
+                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_W); }> "⏬"</div>
+                <div class=styles::arrow_button on:click=move |_| { handle_key_press(KEY_D); }> "➡️"</div>
             </div>
         </div>
     }
