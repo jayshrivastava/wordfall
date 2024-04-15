@@ -92,6 +92,36 @@ fn make_word_with_key(word: &'static str) -> WordWithKey {
 }
 
 #[component]
+fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl IntoView {
+   return view! {
+      <div
+        class=styles::modal
+        style:display=move || {
+            if display.get() {
+                return "block"
+            }
+            return "none"
+        }
+   >
+        <div class=styles::modal_content>
+
+            <p
+                class=styles::modal_close
+                 on:mouseup=move |_| { set_display.update(|d| {*d = false}); }
+                 on:touchend=move |ev| {ev.prevent_default();set_display.update(|d| {*d = false}); }
+            >
+                close
+            </p>
+            <img src="./../img/info2.png"> </img>
+            <br/>
+            <p> Any issues? Report them <a href="https://github.com/jayshrivastava/wordfall/issues">here</a> </p>
+            <p> Enjoying the game? <a href="https://www.buymeacoffee.com/jayants"> Buy me a coffee</a> " :)" </p>
+        </div>
+      </div>
+   }
+}
+
+#[component]
 fn App() -> impl IntoView {
     let (gen, set_gen) = create_signal(TestGenerator::new());
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
@@ -99,13 +129,17 @@ fn App() -> impl IntoView {
     let (checking, set_checking) = create_signal(false);
     let (t, _) = create_signal(make_trie());
     let (game_meta_text, set_game_meta_text) = create_signal(vec![]);
+    let (num_remaining, set_num_remaining) = create_signal(0);
     let (score, set_score) = create_signal(0);
     let (last_words, set_last_words) = create_signal(vec![]);
+    let (words_found, set_words_found) = create_signal(0);
+    let (show_intro_modal, set_show_intro_modal) = create_signal(true);
 
-    // Set next letters.
+    // Set next letters and num remaining initially.
     create_effect(move |_| {
         set_gen.update(|g| {
-            set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD))
+            set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
+            set_num_remaining.update(|rem| *rem = g.num_letters_left())
         });
     });
 
@@ -124,6 +158,7 @@ fn App() -> impl IntoView {
                     }
                     *val = next.unwrap();
                     set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
+                    set_num_remaining.update(|rem| *rem = g.num_letters_left())
                 })
             });
         });
@@ -256,7 +291,7 @@ fn App() -> impl IntoView {
                         }
                     }
                     // Set last words.
-                    for word in words_clone {
+                    for word in &words_clone {
                         set_last_words.update(|last_words| {
                             last_words.insert(0, make_word_with_key(word));
                             if last_words.len() > LAST_WORDS_WINDOW {
@@ -266,6 +301,7 @@ fn App() -> impl IntoView {
                         set_score.update(|score| {
                             *score = *score + get_score_single(word)
                         });
+                        set_words_found.update(|words_found| {*words_found = *words_found + words_clone.len()});
                     }
 
                     set_checking(false);
@@ -305,6 +341,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class=styles::grid_container_container>
+            <InfoModal display=show_intro_modal set_display=set_show_intro_modal/>
             <div class=styles::grid_container>
                 <For
                     each=grid
@@ -345,13 +382,28 @@ fn App() -> impl IntoView {
                     on:touchend=move |ev| {ev.prevent_default(); handle_key_press(KEY_D); }
                 > "➡️"</button>
             </div>
-            <div>
-                <p class=styles::game_meta_text>"Up Next: "{move || game_meta_text.get().iter().map(|&c| c.to_string())
-                    .collect::<Vec<_>>().join(", ")}</p>
+
+            // Next chars and remaining count.
+            <div class=styles::meta_container>
+                <div class=styles::left_meta>
+                    <p class=styles::game_meta_text>"Up Next: "{move || game_meta_text.get().iter().map(|&c| c.to_string())
+                        .collect::<Vec<_>>().join(", ")}</p>
+                </div>
+                <div class=styles::right_meta>
+                    <p class=styles::game_meta_text>"Remaining: "{move || num_remaining.get()}</p>
+                </div>
             </div>
-            <div>
-                <p class=styles::game_meta_text>"Score: "{move || score.get()}</p>
+
+            // Words found + score
+            <div class=styles::meta_container>
+                <div class=styles::left_meta>
+                <p class=styles::game_meta_text>"Words Found: "{move || words_found.get()}</p>
+                </div>
+                <div class=styles::right_meta>
+                    <p class=styles::game_meta_text>"Score: "{move || score.get()}</p>
+                </div>
             </div>
+            // Previous words
             <div>
                 <p class=styles::game_meta_text>{"Previous Words:"}</p>
                 <div class=styles::last_words_indent>
@@ -360,11 +412,10 @@ fn App() -> impl IntoView {
                         key=|word_with_key| word_with_key.key.clone()
                         let: wwk
                     >
-                        <p class=styles::game_meta_text>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
+                    <p class=styles::game_meta_text>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
                     </For>
                 </div>
             </div>
-
         </div>
     }
 }
