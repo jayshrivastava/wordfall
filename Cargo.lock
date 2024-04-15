@@ -1925,6 +1925,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
+ "lazy_static",
  "leptos",
  "rand",
  "stylance",

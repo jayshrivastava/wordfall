@@ -76,6 +76,10 @@ impl Generator for LetterGenerator {
    fn next_n_letters(&mut self, n: usize) -> Vec<char>{
      return self.chars[self.seq..std::cmp::min(self.seq + n, self.chars.len())].to_vec()
    }
+
+   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32 {
+      return calc_score(&self.words)
+   }
 }
 
 
@@ -103,10 +107,16 @@ impl Generator for TestGenerator {
       let substring = &TEST_LETTERS[self.idx..std::cmp::min(self.idx + n, TEST_LETTERS.len())];
       substring.chars().collect()
    }
+
+   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32 {
+      return calc_score(&vec![TEST_LETTERS])
+   }
 }
 
 pub trait Generator {
    fn next_letter(&mut self) -> Option<char>;
 
    fn next_n_letters(&mut self, n: usize) -> Vec<char>;
+
+   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32;
 }

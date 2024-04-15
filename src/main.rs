@@ -3,12 +3,14 @@ use rand::{random, Rng};
 mod header;
 mod trie;
 mod words;
+mod scoring;
 
 use leptos::*;
 use stylance::import_crate_style;
 use leptos::logging::log;
 use core::time::Duration;
 use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE};
+use crate::scoring::get_score_single;
 use crate::trie::TrieNode;
 use crate::words::WORDS;
 
@@ -16,10 +18,12 @@ import_crate_style!(styles, "./src/styles.module.scss");
 
 // NB: The width variable exists separately in scss as well.
 const GRID_WIDTH: usize = 9;
-const GRID_HEIGHT: usize = 11;
+const GRID_HEIGHT: usize = 9;
 const GRID_SIZE: usize =GRID_WIDTH * GRID_HEIGHT;
 
 const LOOKAHEAD: usize = 3;
+
+const LAST_WORDS_WINDOW: usize= 3;
 
 const EMPTY:  char = ' ';
 
@@ -74,6 +78,19 @@ fn make_trie() -> TrieNode {
     t
 }
 
+#[derive(Clone)]
+struct WordWithKey {
+    word: &'static str,
+    key: u64,
+}
+
+fn make_word_with_key(word: &'static str) -> WordWithKey {
+    return WordWithKey{
+        word,
+        key: random(),
+    }
+}
+
 #[component]
 fn App() -> impl IntoView {
     let (gen, set_gen) = create_signal(TestGenerator::new());
@@ -81,15 +98,18 @@ fn App() -> impl IntoView {
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
     let (checking, set_checking) = create_signal(false);
     let (t, _) = create_signal(make_trie());
-    let (next_letters, set_next_letters) = create_signal(vec![]);
+    let (game_meta_text, set_game_meta_text) = create_signal(vec![]);
+    let (score, set_score) = create_signal(0);
+    let (last_words, set_last_words) = create_signal(vec![]);
 
+    // Set next letters.
     create_effect(move |_| {
         set_gen.update(|g| {
-            set_next_letters.update(|nl| *nl = g.next_n_letters(LOOKAHEAD))
+            set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD))
         });
     });
 
-    let spawn = move || {
+     let spawn = move || {
         if grid.get()[GRID_WIDTH/2].val.get() != EMPTY {
             // TODO: handle user lost the game condition
             panic!("TODO: lost")
@@ -103,7 +123,7 @@ fn App() -> impl IntoView {
                         panic!("TODO: you won")
                     }
                     *val = next.unwrap();
-                    set_next_letters.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
+                    set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
                 })
             });
         });
@@ -177,10 +197,11 @@ fn App() -> impl IntoView {
                             }
                             match dir {
                                 0 => {
-                                    j -= GRID_WIDTH;
-                                    if j < 0 {
+
+                                    if j-GRID_WIDTH < 0 {
                                         break
                                     }
+                                    j -= GRID_WIDTH;
                                 },
                                 1 => {
                                     if (j+1) % GRID_WIDTH < j % GRID_WIDTH {
@@ -207,6 +228,8 @@ fn App() -> impl IntoView {
                     }
                 }
                 log!("{:?}", words);
+
+                let found_words = words.len() > 0;
                 let idx_final_iter = &indexes_final;
                 for word_idx_arr in idx_final_iter {
                     for idx in word_idx_arr {
@@ -218,7 +241,13 @@ fn App() -> impl IntoView {
                     }
                 }
                 let idx_final_clone = indexes_final.clone();
+                let words_clone = words.clone();
+                if !found_words {
+                    set_checking(false);
+                    return
+                }
                 set_timeout(move || {
+                    // Update grid. TODO: slide letters down.
                     for word_idx_arr in idx_final_clone {
                         for idx in word_idx_arr {
                             grid.with(|blocks: &Vec<BlockState>| {
@@ -227,13 +256,25 @@ fn App() -> impl IntoView {
                             });
                         }
                     }
+                    // Set last words.
+                    for word in words_clone {
+                        set_last_words.update(|last_words| {
+                            last_words.insert(0, make_word_with_key(word));
+                            if last_words.len() > LAST_WORDS_WINDOW {
+                                last_words.pop();
+                            }
+                        });
+                        set_score.update(|score| {
+                            *score = *score + get_score_single(word)
+                        });
+                    }
+
+                    set_checking(false);
                 }, Duration::from_millis(500));
-
-
             });
         });
 
-        set_checking(false);
+
     };
 
     let handle_key_press = move |code: &str| {
@@ -287,9 +328,6 @@ fn App() -> impl IntoView {
                 </div>
                 </For>
             </div>
-            <div>
-                <p class=styles::next_letters>"Up Next: "{move || next_letters.get().iter().map(|&c| c.to_string()).collect::<Vec<_>>().join(", ")}</p>
-            </div>
             <div class=styles::arrow_container>
                 <button class=styles::arrow_button
                     on:mouseup=move |_| { handle_key_press(KEY_A); }
@@ -308,6 +346,26 @@ fn App() -> impl IntoView {
                     on:touchend=move |ev| {ev.prevent_default(); handle_key_press(KEY_D); }
                 > "➡️"</button>
             </div>
+            <div>
+                <p class=styles::game_meta_text>"Up Next: "{move || game_meta_text.get().iter().map(|&c| c.to_string())
+                    .collect::<Vec<_>>().join(", ")}</p>
+            </div>
+            <div>
+                <p class=styles::game_meta_text>"Score: "{move || score.get()}</p>
+            </div>
+            <div>
+                <p class=styles::game_meta_text>{"Previous Words:"}</p>
+                <div class=styles::last_words_indent>
+                    <For
+                        each=last_words
+                        key=|word_with_key| word_with_key.key.clone()
+                        let: wwk
+                    >
+                        <p class=styles::game_meta_text>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
+                    </For>
+                </div>
+            </div>
+
         </div>
     }
 }
