@@ -197,11 +197,10 @@ fn App() -> impl IntoView {
                             }
                             match dir {
                                 0 => {
-
-                                    if j-GRID_WIDTH < 0 {
+                                    j += GRID_WIDTH;
+                                    if j >= GRID_SIZE {
                                         break
                                     }
-                                    j -= GRID_WIDTH;
                                 },
                                 1 => {
                                     if (j+1) % GRID_WIDTH < j % GRID_WIDTH {
@@ -211,10 +210,10 @@ fn App() -> impl IntoView {
                                 },
                                 // Left and up directions.
                                 // 2 => {
-                                //     j += GRID_WIDTH;
-                                //     if j >= GRID_SIZE {
+                                //     if j-GRID_WIDTH < 0 {
                                 //         break
                                 //     }
+                                //     j -= GRID_WIDTH;
                                 // },
                                 // 3 => {
                                 //     if (j-1) % GRID_WIDTH > j % GRID_WIDTH  {
