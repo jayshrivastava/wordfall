@@ -1944,6 +1944,8 @@ dependencies = [
  "lazy_static",
  "leptos",
  "rand",
+ "serde",
+ "serde_json",
  "stylance",
 ]
 

@@ -51,7 +51,6 @@ impl TrieNode {
         return self.children[idx(c)].as_ref().unwrap().deref()
     }
     pub fn add_word(&mut self, word: &'static str) {
-        log!("{:?}", word);
         let mut trav = self;
         for c in word.chars() {
             if !trav.has_next(c.clone()) {

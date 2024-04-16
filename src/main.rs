@@ -11,6 +11,7 @@ use stylance::import_crate_style;
 use leptos::logging::log;
 use core::time::Duration;
 use std::ops::Deref;
+use serde::{Serialize, Deserialize};
 use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE};
 use crate::scoring::get_score_single;
 use crate::trie::TrieNode;
@@ -24,7 +25,7 @@ const GRID_WIDTH: usize = 9;
 const GRID_HEIGHT: usize = 9;
 const GRID_SIZE: usize =GRID_WIDTH * GRID_HEIGHT;
 
-const LOOKAHEAD: usize = 3;
+const LOOKAHEAD: usize = 4;
 
 const LAST_WORDS_WINDOW: usize= 3;
 
@@ -43,7 +44,7 @@ const ARR_D: &str = "ArrowDown";
 const ARR_R: &str = "ArrowRight";
 const ARR_U: &str = "ArrowUp";
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct BlockState {
     val: RwSignal<char>,
     selected: RwSignal<bool>,
@@ -58,7 +59,7 @@ fn new_block_state(val: char) -> BlockState {
     }
 }
 
-fn make_block_vec(set_gen: WriteSignal<TestGenerator>) -> Vec<BlockState> {
+fn make_block_vec(set_gen: WriteSignal<LetterGenerator>) -> Vec<BlockState> {
    let mut ret: Vec<BlockState> = vec![];
    for _  in 0..GRID_WIDTH * GRID_HEIGHT {
        ret.push(new_block_state(EMPTY))
@@ -81,7 +82,7 @@ fn make_trie(words: Vec<&'static str>) -> TrieNode {
     t
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct WordWithKey {
     word: &'static str,
     key: u64,
@@ -133,24 +134,101 @@ fn set_wordfall_first_time() {
 
 #[component]
 fn App() -> impl IntoView {
-
-
-    let storage = gloo_storage::LocalStorage::raw();
-    let first_time = storage.get(WORDFALL_FIRST_TIME).unwrap().is_none();
-
     let words = make_words();
-
-    let (gen, set_gen) = create_signal(TestGenerator::new(words.clone()));
+    let (gen, set_gen) = create_signal(LetterGenerator::new(words.clone()));
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
-    let (checking, set_checking) = create_signal(false);
-    let (t, _) = create_signal(make_trie(words.clone()));
+    let (checking, set_checking) = create_signal(false); // unsaved
+    let (t, _) = create_signal(make_trie(words.clone())); // unsaved
     let (game_meta_text, set_game_meta_text) = create_signal(vec![]);
     let (num_remaining, set_num_remaining) = create_signal(0);
     let (score, set_score) = create_signal(0);
     let (last_words, set_last_words) = create_signal(vec![]);
     let (words_found, set_words_found) = create_signal(0);
-    let (show_intro_modal, set_show_intro_modal) = create_signal(first_time);
+    let store = gloo_storage::LocalStorage::raw();
+    let (show_intro_modal, set_show_intro_modal) = create_signal(store.get(WORDFALL_FIRST_TIME).unwrap().is_none()); // unsaved
+
+    let load_state = move || {
+        let storage = gloo_storage::LocalStorage::raw();
+        // Nothing stored, so use defaults.
+        if storage.get("WORDFALL_GEN").unwrap().is_none() {
+            return
+        }
+        set_gen.update(|ge| {
+            let j = storage.get("WORDFALL_GEN").unwrap().unwrap();
+            *ge = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_grid.update(|g| {
+            let j = storage.get("WORDFALL_GRID").unwrap().unwrap();
+            *g = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_current.update(|c| {
+            let j = storage.get("WORDFALL_CURRENT").unwrap().unwrap();
+            *c = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_game_meta_text.update(|meta_text| {
+            let j = storage.get("WORDFALL_META_TEXT").unwrap().unwrap();
+            *meta_text = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_num_remaining.update(|rem| {
+            let j = storage.get("WORDFALL_NUM_REMAINING").unwrap().unwrap();
+            *rem = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_score.update(|s| {
+            let j = storage.get("WORDFALL_SCORE").unwrap().unwrap();
+            *s = serde_json::from_str(j.as_str()).unwrap();
+        });
+        set_last_words.update(|lw| {
+            let j = storage.get("WORDFALL_LAST_WORDS").unwrap().unwrap();
+            let static_s = Box::leak(j.into_boxed_str());
+            *lw = serde_json::from_str(static_s).unwrap();
+        });
+        set_words_found.update(|wf| {
+            let j = storage.get("WORDFALL_WORDS_FOUND").unwrap().unwrap();
+            *wf = serde_json::from_str(j.as_str()).unwrap();
+        });
+    };
+
+    // Load initial state if it exists.
+    create_effect(move |_| {
+       load_state();
+    });
+
+    let save_state = move || {
+        let storage = gloo_storage::LocalStorage::raw();
+        gen.with(|ge| {
+            let json = serde_json::to_string(&ge).unwrap();
+            storage.set("WORDFALL_GEN", json.as_str()).unwrap();
+        });
+        grid.with(|g| {
+            let json = serde_json::to_string(&g).unwrap();
+            storage.set("WORDFALL_GRID", json.as_str()).unwrap();
+        });
+        current.with(|c| {
+            let json = serde_json::to_string(&c).unwrap();
+            storage.set("WORDFALL_CURRENT", json.as_str()).unwrap();
+        });
+        game_meta_text.with(|meta_text| {
+            let json = serde_json::to_string(&meta_text).unwrap();
+            storage.set("WORDFALL_META_TEXT", json.as_str()).unwrap();
+        });
+        num_remaining.with(|rem| {
+            let json = serde_json::to_string(&rem).unwrap();
+            storage.set("WORDFALL_NUM_REMAINING", json.as_str()).unwrap();
+        });
+        score.with(|s| {
+            let json = serde_json::to_string(&s).unwrap();
+            storage.set("WORDFALL_SCORE", json.as_str()).unwrap();
+        });
+        last_words.with(|lw| {
+            let json = serde_json::to_string(&lw).unwrap();
+            storage.set("WORDFALL_LAST_WORDS", json.as_str()).unwrap();
+        });
+        words_found.with(|wf| {
+            let json = serde_json::to_string(&wf).unwrap();
+            storage.set("WORDFALL_WORDS_FOUND", json.as_str()).unwrap();
+        });
+    };
 
     // Set next letters and num remaining initially.
     create_effect(move |_| {
@@ -262,6 +340,7 @@ fn App() -> impl IntoView {
                         let mut j = i;
                         let mut indexes = vec![];
                         while blocks[j].val.get() != EMPTY && trav.has_next(blocks[j].val.get()) {
+                            log!("{:?}{:?}", blocks[j].val.get(), i);
                             trav = trav.next(blocks[j].val.get());
                             indexes.push(j);
                             // Check for words of at least length 3.
@@ -319,6 +398,7 @@ fn App() -> impl IntoView {
                 if !found_words {
                     set_checking(false);
                     spawn();
+                    save_state();
                     return
                 }
                 set_timeout(move || {
@@ -352,12 +432,13 @@ fn App() -> impl IntoView {
 
                     set_checking(false);
                     spawn();
+                    save_state();
                 }, Duration::from_millis(500));
             });
         });
-
-
     };
+
+
 
     let handle_key_press = move |code: &str| {
         // Ignore keypresses while checking / popping words.

@@ -1,16 +1,20 @@
+use std::sync::Arc;
 use rand::{Rng, SeedableRng};
 use chrono::prelude::*;
 use leptos::logging::log;
 use rand::seq::SliceRandom;
-
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize)]
 pub struct LetterGenerator {
-   words: Vec<&'static str>,
+   words: Vec<String>,
    chars: Vec<char>,
    seq: usize,
 }
 const WORD_COUNT: usize = 15;
 
 pub const MIN_WORD_SIZE: usize = 3;
+
+pub const MAX_WORD_SIZE: usize = 7;
 
 impl LetterGenerator {
 
@@ -35,13 +39,14 @@ impl LetterGenerator {
 
       let mut words = vec![];
       let mut i = 0;
+      let mut max_ws = MAX_WORD_SIZE;
       while i < WORD_COUNT {
          let w = dictionary[rng.gen_range(0..dictionary.len())];
-         if w.len() < MIN_WORD_SIZE {
+         if w.len() < MIN_WORD_SIZE || w.len() > max_ws {
             continue
          }
          i += 1;
-         words.push(w)
+         words.push(String::from(w))
       }
 
       let mut chars = vec![];
@@ -78,14 +83,11 @@ impl Generator for LetterGenerator {
    fn num_letters_left(&mut self) -> usize {
       return self.chars.len() - self.seq
    }
-
-   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32 {
-      return calc_score(&self.words)
-   }
 }
 
-
 const TEST_LETTERS: &str = "CATDOGANDBUTSOLDCOUNTMATH";
+
+#[derive(Serialize, Deserialize)]
 pub struct TestGenerator {
    idx: usize
 }
@@ -113,10 +115,6 @@ impl Generator for TestGenerator {
    fn num_letters_left(&mut self) -> usize {
       return TEST_LETTERS.len() - self.idx
    }
-
-   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32 {
-      return calc_score(&vec![TEST_LETTERS])
-   }
 }
 
 pub trait Generator {
@@ -125,6 +123,4 @@ pub trait Generator {
    fn next_n_letters(&mut self, n: usize) -> Vec<char>;
 
    fn num_letters_left(&mut self) -> usize;
-
-   fn calc_score(&self, calc_score: fn(&Vec<&str>) -> u32) -> u32;
 }
