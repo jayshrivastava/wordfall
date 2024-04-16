@@ -1,6 +1,4 @@
-use std::sync::Arc;
 use rand::{Rng, SeedableRng};
-use chrono::prelude::*;
 use leptos::logging::log;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -10,7 +8,7 @@ pub struct LetterGenerator {
    chars: Vec<char>,
    seq: usize,
 }
-const WORD_COUNT: usize = 15;
+const WORD_COUNT: usize = 12;
 
 pub const MIN_WORD_SIZE: usize = 3;
 
@@ -19,21 +17,7 @@ pub const MAX_WORD_SIZE: usize = 7;
 impl LetterGenerator {
 
    // Generate a sequence of 25 words from the random list. This will be the daily challenge.
-   pub fn new(dictionary: Vec<&'static str>) -> LetterGenerator {
-      let current_date = Utc::now();
-
-      // Extract the date components (year, month, day) as integers
-      let year = current_date.year() as u32;
-      let month = current_date.month() as u32;
-      let day = current_date.day() as u32;
-
-      // Concatenate the date components to form the seed value
-      let seed: [u32; 8] = [year, month, day, 0, 0, 0, 0, 0];
-      let mut seed_bytes = [0u8; 32];
-      for (i, &n) in seed.iter().enumerate() {
-         seed_bytes[i * 4..(i + 1) * 4].copy_from_slice(&n.to_be_bytes());
-      }
-
+   pub fn new(dictionary: Vec<&'static str>, seed_bytes: [u8; 32]) -> LetterGenerator {
       // Initialize the PRNG with the seed value
       let mut rng = rand::rngs::StdRng::from_seed(seed_bytes);
 
@@ -95,7 +79,7 @@ pub struct TestGenerator {
 }
 
 impl TestGenerator {
-   pub fn new(words: Vec<&str>) -> TestGenerator {
+   pub fn new(words: Vec<&str>, seed_bytes: [u8; 32]) -> TestGenerator {
       TestGenerator{
          idx: 0,
       }

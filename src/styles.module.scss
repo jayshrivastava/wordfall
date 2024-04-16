@@ -133,10 +133,9 @@ body {
   margin: auto; /* Center the image horizontally */
 }
 
-.modal-content p {
+.modal-content-p {
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
-  font-size: 0.9em;
 }
 
 .modal-content a {
@@ -150,6 +149,8 @@ body {
 }
 
 .modal-close {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
   text-decoration: underline;
   float: right;
 }
@@ -158,4 +159,10 @@ body {
 .modal-close:focus {
   text-decoration: none;
   cursor: pointer;
+}
+
+.modal-end-header {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.3em;
+  margin: 0 0 10px;
 }

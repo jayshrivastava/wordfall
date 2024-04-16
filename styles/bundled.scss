@@ -133,10 +133,9 @@ body {
   margin: auto; /* Center the image horizontally */
 }
 
-.modal-content-94e563a p {
+.modal-content-p-94e563a {
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
-  font-size: 0.9em;
 }
 
 .modal-content-94e563a a {
@@ -150,6 +149,8 @@ body {
 }
 
 .modal-close-94e563a {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
   text-decoration: underline;
   float: right;
 }
@@ -158,4 +159,10 @@ body {
 .modal-close-94e563a:focus {
   text-decoration: none;
   cursor: pointer;
+}
+
+.modal-end-header-94e563a {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.3em;
+  margin: 0 0 10px;
 }

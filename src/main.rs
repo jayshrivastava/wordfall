@@ -4,6 +4,7 @@ mod header;
 mod trie;
 mod words;
 mod scoring;
+mod seed;
 
 use gloo_storage::Storage;
 use leptos::*;
@@ -16,7 +17,7 @@ use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE
 use crate::scoring::get_score_single;
 use crate::trie::TrieNode;
 use crate::words::make_words;
-
+use crate::seed::get_seed;
 
 import_crate_style!(styles, "./src/styles.module.scss");
 
@@ -62,7 +63,7 @@ fn new_block_state(val: char) -> BlockState {
     }
 }
 
-fn make_block_vec(set_gen: WriteSignal<TestGenerator>) -> Vec<BlockState> {
+fn make_block_vec(set_gen: WriteSignal<LetterGenerator>) -> Vec<BlockState> {
    let mut ret: Vec<BlockState> = vec![];
    for _  in 0..GRID_WIDTH * GRID_HEIGHT {
        ret.push(new_block_state(EMPTY))
@@ -101,8 +102,8 @@ fn make_word_with_key(word: &'static str) -> WordWithKey {
 #[component]
 fn ModalFooter() -> impl IntoView {
    return view! {
-       <p> Any issues? Report them <a href="https://github.com/jayshrivastava/wordfall/issues">here</a> </p>
-       <p> Enjoying the game? <a href="https://www.buymeacoffee.com/jayants"> Buy me a coffee</a> " :)" </p>
+       <p class=styles::modal_content_p> Any issues? Report them <a href="https://github.com/jayshrivastava/wordfall/issues">here</a> </p>
+       <p class=styles::modal_content_p> Enjoying the game? <a href="https://www.buymeacoffee.com/jayants"> Buy me a coffee</a> " :)" </p>
    }
 }
 #[component]
@@ -153,27 +154,30 @@ fn EndModal(
    >
         <div class=styles::modal_content>
 
-            <p
-                class=styles::modal_close
-                 on:mouseup=move |_| { set_display.update(|d| {*d = ""}); }
-                 on:touchend=move |ev| { ev.prevent_default(); set_display.update(|d| {*d = ""}); }
-            >
-                close
-            </p>
-            <p> {move || {
+            // <p
+            //     class=styles::modal_close
+            //      on:mouseup=move |_| { set_display.update(|d| {*d = ""}); }
+            //      on:touchend=move |ev| { ev.prevent_default(); set_display.update(|d| {*d = ""}); }
+            // >
+            //     close
+            // </p>
+            <p class=styles::modal_end_header> {move || {
                 if display.get() == "lost" {
-                    return "Better luck next time"
+                    return "Better luck next time..."
                 }
                 return "Nice work!"
             }} </p>
-            <p> Your total score was {move || {score.get() }}</p>
+            <p class=styles::modal_content_p> Your total score was {move || {score.get() }}</p>
+            <br/>
             <For
                     each=words
                     key=|word_with_key| word_with_key.key.clone()
                     let: wwk
             >
-                <p>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
+                <p class=styles::modal_content_p>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
             </For>
+            <br/>
+                <p class=styles::modal_content_p>{"Come back tomorrow for a new challenge!"}</p>
             <br/>
             <ModalFooter/>
         </div>
@@ -191,8 +195,18 @@ fn set_wordfall_first_time() {
 
 #[component]
 fn App() -> impl IntoView {
+    let store = gloo_storage::LocalStorage::raw();
+
+    let seed = get_seed();
+    let seed_str = seed
+        .iter()
+        .map(|&byte| format!("{:08b}", byte)) // Format each byte as binary with leading zeros
+        .collect::<Vec<_>>()
+        .join("");
+    let stored_seed = store.get("WORDFALL_SEED").unwrap();
+
     let words = make_words();
-    let (gen, set_gen) = create_signal(TestGenerator::new(words.clone()));
+    let (gen, set_gen) = create_signal(LetterGenerator::new(words.clone(), seed));
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
     let (checking, set_checking) = create_signal(false); // unsaved
@@ -204,8 +218,30 @@ fn App() -> impl IntoView {
     let (words_found, set_words_found) = create_signal(vec![]);
     let store = gloo_storage::LocalStorage::raw();
     let (show_intro_modal, set_show_intro_modal) = create_signal(store.get(WORDFALL_FIRST_TIME).unwrap().is_none()); // unsaved
-    let (cycle, set_cycle) = create_signal(false);
+    let (cycle, set_cycle) = create_signal(false); // unsaved
     let (display_end, set_display_end) = create_signal("");
+
+    let reset = move || {
+        set_gen.update(|sg| *sg = LetterGenerator::new(words.clone(), seed));
+        set_grid.update(|g| *g = make_block_vec(set_gen));
+        set_current.update(|c| {*c = GRID_WIDTH / 2});
+        // set_game_meta_text.update(|gm| *gm = vec![]);
+        // set_num_remaining.update(|nr| { *nr = 0});
+        set_score.update(|s| {*s = 0});
+        set_last_words.update(|lw| { *lw = vec![]});
+        set_words_found.update(|wf| { *wf = vec![]});
+        set_display_end.update(|disp| { *disp = ""});
+    };
+
+    if stored_seed.is_some() {
+        if seed_str != stored_seed.unwrap() {
+            reset();
+            store.clear().unwrap();
+            store.set("WORDFALL_SEED", &seed_str).unwrap();
+        }
+    } else {
+        store.set("WORDFALL_SEED", &seed_str).unwrap();
+    }
 
     let load_state = move || {
         let storage = gloo_storage::LocalStorage::raw();
@@ -311,7 +347,8 @@ fn App() -> impl IntoView {
          // Lost condition
         if grid.get()[GRID_WIDTH/2].val.get() != EMPTY {
             // TODO: handle user lost the game condition
-            set_display_end.update(|d| {*d = "lost"})
+            set_display_end.update(|d| {*d = "lost"});
+            return
         }
         set_current(GRID_WIDTH / 2);
         let _ = grid.with(|blocks| {
@@ -411,7 +448,6 @@ fn App() -> impl IntoView {
                         let mut j = i;
                         let mut indexes = vec![];
                         while blocks[j].val.get() != EMPTY && trav.has_next(blocks[j].val.get()) {
-                            log!("{:?}{:?}", blocks[j].val.get(), i);
                             trav = trav.next(blocks[j].val.get());
                             indexes.push(j);
                             // Check for words of at least length 3.
@@ -451,7 +487,7 @@ fn App() -> impl IntoView {
                         }
                     }
                 }
-                log!("{:?}", words);
+                // log!("{:?}", words);
 
                 let found_words = words.len() > 0;
                 let idx_final_iter = &indexes_final;
@@ -519,6 +555,9 @@ fn App() -> impl IntoView {
     });
 
     let handle_key_press = move |code: &str| {
+        if display_end.get() != "" {
+            return
+        }
         // Ignore keypresses while checking / popping words.
         if checking.get() {
             return
@@ -620,7 +659,7 @@ fn App() -> impl IntoView {
             <div class=styles::meta_container>
                 <div class=styles::left_meta>
                     <div>
-                        <p class=styles::game_meta_text>{"Previous Words:"}</p>
+                        <p class=styles::game_meta_text>{"Last Few Words:"}</p>
                         <div class=styles::last_words_indent>
                             <For
                                 each=last_words
