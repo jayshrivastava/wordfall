@@ -5,14 +5,17 @@ mod trie;
 mod words;
 mod scoring;
 
+use gloo_storage::Storage;
 use leptos::*;
 use stylance::import_crate_style;
 use leptos::logging::log;
 use core::time::Duration;
+use std::ops::Deref;
 use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE};
 use crate::scoring::get_score_single;
 use crate::trie::TrieNode;
 use crate::words::WORDS;
+
 
 import_crate_style!(styles, "./src/styles.module.scss");
 
@@ -107,8 +110,8 @@ fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl 
 
             <p
                 class=styles::modal_close
-                 on:mouseup=move |_| { set_display.update(|d| {*d = false}); }
-                 on:touchend=move |ev| {ev.prevent_default();set_display.update(|d| {*d = false}); }
+                 on:mouseup=move |_| { set_wordfall_first_time(); set_display.update(|d| {*d = false}); }
+                 on:touchend=move |ev| { ev.prevent_default(); set_wordfall_first_time(); set_display.update(|d| {*d = false}); }
             >
                 close
             </p>
@@ -121,8 +124,21 @@ fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl 
    }
 }
 
+const WORDFALL_FIRST_TIME: &str = "WORDFALL_FIRST_TIME";
+
+fn set_wordfall_first_time() {
+   let s = gloo_storage::LocalStorage::raw();
+   s.set("WORDFALL_FIRST_TIME", "true").unwrap();
+}
+
 #[component]
 fn App() -> impl IntoView {
+
+
+    let storage = gloo_storage::LocalStorage::raw();
+    logging::log!("{storage:?}");
+    let first_time = storage.get(WORDFALL_FIRST_TIME).unwrap().is_none();
+
     let (gen, set_gen) = create_signal(TestGenerator::new());
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
@@ -133,7 +149,7 @@ fn App() -> impl IntoView {
     let (score, set_score) = create_signal(0);
     let (last_words, set_last_words) = create_signal(vec![]);
     let (words_found, set_words_found) = create_signal(0);
-    let (show_intro_modal, set_show_intro_modal) = create_signal(true);
+    let (show_intro_modal, set_show_intro_modal) = create_signal(first_time);
 
     // Set next letters and num remaining initially.
     create_effect(move |_| {
@@ -382,7 +398,14 @@ fn App() -> impl IntoView {
                     on:touchend=move |ev| {ev.prevent_default(); handle_key_press(KEY_D); }
                 > "➡️"</button>
             </div>
-
+            // RULES
+            <div class=styles::rules>
+                <p
+                    class=styles::rules_text
+                    on:mouseup=move |_| { set_show_intro_modal.update(|show| {*show=true});}
+                    on:touchend=move |ev| {ev.prevent_default(); set_show_intro_modal.update(|show| {*show=true});}
+                >"⇱ Rules"</p>
+            </div>
             // Next chars and remaining count.
             <div class=styles::meta_container>
                 <div class=styles::left_meta>
@@ -404,18 +427,25 @@ fn App() -> impl IntoView {
                 </div>
             </div>
             // Previous words
-            <div>
-                <p class=styles::game_meta_text>{"Previous Words:"}</p>
-                <div class=styles::last_words_indent>
-                    <For
-                        each=last_words
-                        key=|word_with_key| word_with_key.key.clone()
-                        let: wwk
-                    >
-                    <p class=styles::game_meta_text>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
-                    </For>
+            <div class=styles::meta_container>
+                <div class=styles::left_meta>
+                    <div>
+                        <p class=styles::game_meta_text>{"Previous Words:"}</p>
+                        <div class=styles::last_words_indent>
+                            <For
+                                each=last_words
+                                key=|word_with_key| word_with_key.key.clone()
+                                let: wwk
+                            >
+                            <p class=styles::game_meta_text>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
+                            </For>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
+
         </div>
     }
 }
