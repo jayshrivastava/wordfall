@@ -35,6 +35,9 @@ const TICK: u64 = 1;
 
 const STARTING: usize = 4;
 
+const GREEN_MS: u64 = 500;
+const YELLOW_MS: u64 = 200;
+
 const KEY_A: &str = "KeyA";
 const KEY_S: &str = "KeyS";
 const KEY_D: &str = "KeyD";
@@ -59,7 +62,7 @@ fn new_block_state(val: char) -> BlockState {
     }
 }
 
-fn make_block_vec(set_gen: WriteSignal<LetterGenerator>) -> Vec<BlockState> {
+fn make_block_vec(set_gen: WriteSignal<TestGenerator>) -> Vec<BlockState> {
    let mut ret: Vec<BlockState> = vec![];
    for _  in 0..GRID_WIDTH * GRID_HEIGHT {
        ret.push(new_block_state(EMPTY))
@@ -135,7 +138,7 @@ fn set_wordfall_first_time() {
 #[component]
 fn App() -> impl IntoView {
     let words = make_words();
-    let (gen, set_gen) = create_signal(LetterGenerator::new(words.clone()));
+    let (gen, set_gen) = create_signal(TestGenerator::new(words.clone()));
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
     let (checking, set_checking) = create_signal(false); // unsaved
@@ -147,6 +150,7 @@ fn App() -> impl IntoView {
     let (words_found, set_words_found) = create_signal(0);
     let store = gloo_storage::LocalStorage::raw();
     let (show_intro_modal, set_show_intro_modal) = create_signal(store.get(WORDFALL_FIRST_TIME).unwrap().is_none()); // unsaved
+    let (cycle, set_cycle) = create_signal(false);
 
     let load_state = move || {
         let storage = gloo_storage::LocalStorage::raw();
@@ -396,6 +400,7 @@ fn App() -> impl IntoView {
                 let idx_final_clone = indexes_final.clone();
                 let words_clone = words.clone();
                 if !found_words {
+                    // Allow events to be handled again, spawn a new block, save the state to storage.
                     set_checking(false);
                     spawn();
                     save_state();
@@ -429,16 +434,22 @@ fn App() -> impl IntoView {
                     for i in (0..GRID_SIZE).rev() {
                         up_idx(i);
                     }
-
-                    set_checking(false);
-                    spawn();
-                    save_state();
-                }, Duration::from_millis(500));
+                    // Hold the slid down blocks for a small period of time.
+                    set_timeout(move || {
+                        // Signal to basically call check_for_words() recursively here.
+                        set_cycle(true);
+                    }, Duration::from_millis(YELLOW_MS));
+                }, Duration::from_millis(GREEN_MS));
             });
         });
     };
 
-
+    create_effect(move |_| {
+        if cycle.get() {
+            set_cycle.set(false);
+            check_for_words();
+        }
+    });
 
     let handle_key_press = move |code: &str| {
         // Ignore keypresses while checking / popping words.

@@ -85,7 +85,8 @@ impl Generator for LetterGenerator {
    }
 }
 
-const TEST_LETTERS: &str = "CATDOGANDBUTSOLDCOUNTMATH";
+// "RWILEDD" recursion test case.
+const TEST_LETTERS: &str = "RWILEDD";
 
 #[derive(Serialize, Deserialize)]
 pub struct TestGenerator {
