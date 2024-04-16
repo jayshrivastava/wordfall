@@ -14,7 +14,7 @@ use std::ops::Deref;
 use crate::letter_gen::{Generator, LetterGenerator, TestGenerator, MIN_WORD_SIZE};
 use crate::scoring::get_score_single;
 use crate::trie::TrieNode;
-use crate::words::WORDS;
+use crate::words::make_words;
 
 
 import_crate_style!(styles, "./src/styles.module.scss");
@@ -73,9 +73,9 @@ fn make_block_vec(set_gen: WriteSignal<TestGenerator>) -> Vec<BlockState> {
    ret
 }
 
-fn make_trie() -> TrieNode {
+fn make_trie(words: Vec<&'static str>) -> TrieNode {
     let mut t = trie::TrieNode::new();
-    for word in WORDS{
+    for word in words {
         t.add_word(word)
     }
     t
@@ -136,14 +136,15 @@ fn App() -> impl IntoView {
 
 
     let storage = gloo_storage::LocalStorage::raw();
-    logging::log!("{storage:?}");
     let first_time = storage.get(WORDFALL_FIRST_TIME).unwrap().is_none();
 
-    let (gen, set_gen) = create_signal(TestGenerator::new());
+    let words = make_words();
+
+    let (gen, set_gen) = create_signal(TestGenerator::new(words.clone()));
     let (grid, set_grid) = create_signal(make_block_vec(set_gen));
     let (current, set_current) = create_signal(GRID_WIDTH / 2);
     let (checking, set_checking) = create_signal(false);
-    let (t, _) = create_signal(make_trie());
+    let (t, _) = create_signal(make_trie(words.clone()));
     let (game_meta_text, set_game_meta_text) = create_signal(vec![]);
     let (num_remaining, set_num_remaining) = create_signal(0);
     let (score, set_score) = create_signal(0);

@@ -2,8 +2,6 @@ use rand::{Rng, SeedableRng};
 use chrono::prelude::*;
 use leptos::logging::log;
 use rand::seq::SliceRandom;
-use crate::words::WORDS;
-
 
 pub struct LetterGenerator {
    words: Vec<&'static str>,
@@ -17,7 +15,7 @@ pub const MIN_WORD_SIZE: usize = 3;
 impl LetterGenerator {
 
    // Generate a sequence of 25 words from the random list. This will be the daily challenge.
-   pub fn new() -> LetterGenerator {
+   pub fn new(dictionary: Vec<&'static str>) -> LetterGenerator {
       let current_date = Utc::now();
 
       // Extract the date components (year, month, day) as integers
@@ -38,7 +36,7 @@ impl LetterGenerator {
       let mut words = vec![];
       let mut i = 0;
       while i < WORD_COUNT {
-         let w = WORDS[rng.gen_range(0..WORDS.len())];
+         let w = dictionary[rng.gen_range(0..dictionary.len())];
          if w.len() < MIN_WORD_SIZE {
             continue
          }
@@ -93,7 +91,7 @@ pub struct TestGenerator {
 }
 
 impl TestGenerator {
-   pub fn new() -> TestGenerator {
+   pub fn new(words: Vec<&str>) -> TestGenerator {
       TestGenerator{
          idx: 0,
       }
