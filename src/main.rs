@@ -99,6 +99,13 @@ fn make_word_with_key(word: &'static str) -> WordWithKey {
 }
 
 #[component]
+fn ModalFooter() -> impl IntoView {
+   return view! {
+       <p> Any issues? Report them <a href="https://github.com/jayshrivastava/wordfall/issues">here</a> </p>
+       <p> Enjoying the game? <a href="https://www.buymeacoffee.com/jayants"> Buy me a coffee</a> " :)" </p>
+   }
+}
+#[component]
 fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl IntoView {
    return view! {
       <div
@@ -121,12 +128,59 @@ fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl 
             </p>
             <img src="./../img/info2.png"> </img>
             <br/>
-            <p> Any issues? Report them <a href="https://github.com/jayshrivastava/wordfall/issues">here</a> </p>
-            <p> Enjoying the game? <a href="https://www.buymeacoffee.com/jayants"> Buy me a coffee</a> " :)" </p>
+            <ModalFooter/>
         </div>
       </div>
    }
 }
+
+#[component]
+fn EndModal(
+    display: ReadSignal<&'static str>,
+    set_display: WriteSignal<&'static str>,
+    words: ReadSignal<Vec<WordWithKey>>,
+    score: ReadSignal<u32>,
+) -> impl IntoView {
+    return view! {
+      <div
+        class=styles::modal
+        style:display=move || {
+            if display.get() == "lost" || display.get() == "won" {
+                return "block"
+            }
+            return "none"
+        }
+   >
+        <div class=styles::modal_content>
+
+            <p
+                class=styles::modal_close
+                 on:mouseup=move |_| { set_display.update(|d| {*d = ""}); }
+                 on:touchend=move |ev| { ev.prevent_default(); set_display.update(|d| {*d = ""}); }
+            >
+                close
+            </p>
+            <p> {move || {
+                if display.get() == "lost" {
+                    return "Better luck next time"
+                }
+                return "Nice work!"
+            }} </p>
+            <p> Your total score was {move || {score.get() }}</p>
+            <For
+                    each=words
+                    key=|word_with_key| word_with_key.key.clone()
+                    let: wwk
+            >
+                <p>{format!("{} - {}", wwk.word, get_score_single(wwk.word))}</p>
+            </For>
+            <br/>
+            <ModalFooter/>
+        </div>
+      </div>
+   }
+}
+
 
 const WORDFALL_FIRST_TIME: &str = "WORDFALL_FIRST_TIME";
 
@@ -147,10 +201,11 @@ fn App() -> impl IntoView {
     let (num_remaining, set_num_remaining) = create_signal(0);
     let (score, set_score) = create_signal(0);
     let (last_words, set_last_words) = create_signal(vec![]);
-    let (words_found, set_words_found) = create_signal(0);
+    let (words_found, set_words_found) = create_signal(vec![]);
     let store = gloo_storage::LocalStorage::raw();
     let (show_intro_modal, set_show_intro_modal) = create_signal(store.get(WORDFALL_FIRST_TIME).unwrap().is_none()); // unsaved
     let (cycle, set_cycle) = create_signal(false);
+    let (display_end, set_display_end) = create_signal("");
 
     let load_state = move || {
         let storage = gloo_storage::LocalStorage::raw();
@@ -189,7 +244,13 @@ fn App() -> impl IntoView {
         });
         set_words_found.update(|wf| {
             let j = storage.get("WORDFALL_WORDS_FOUND").unwrap().unwrap();
-            *wf = serde_json::from_str(j.as_str()).unwrap();
+            let static_s = Box::leak(j.into_boxed_str());
+            *wf = serde_json::from_str(static_s).unwrap();
+        });
+        set_display_end.update(|d| {
+            let j = storage.get("WORDFALL_DISPLAY_END").unwrap().unwrap();
+            let static_s = Box::leak(j.into_boxed_str());
+            *d = serde_json::from_str(static_s).unwrap();
         });
     };
 
@@ -232,6 +293,10 @@ fn App() -> impl IntoView {
             let json = serde_json::to_string(&wf).unwrap();
             storage.set("WORDFALL_WORDS_FOUND", json.as_str()).unwrap();
         });
+        display_end.with(|d| {
+            let json = serde_json::to_string(&d).unwrap();
+            storage.set("WORDFALL_DISPLAY_END", json.as_str()).unwrap();
+        });
     };
 
     // Set next letters and num remaining initially.
@@ -243,9 +308,10 @@ fn App() -> impl IntoView {
     });
 
      let spawn = move || {
+         // Lost condition
         if grid.get()[GRID_WIDTH/2].val.get() != EMPTY {
             // TODO: handle user lost the game condition
-            panic!("TODO: lost")
+            set_display_end.update(|d| {*d = "lost"})
         }
         set_current(GRID_WIDTH / 2);
         let _ = grid.with(|blocks| {
@@ -253,7 +319,8 @@ fn App() -> impl IntoView {
                 set_gen.update(|g| {
                     let next = g.next_letter();
                     if next.is_none() {
-                        panic!("TODO: you won")
+                        // Win condition
+                        set_display_end.update(|d| {*d = "won"})
                     }
                     *val = next.unwrap();
                     set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
@@ -427,7 +494,7 @@ fn App() -> impl IntoView {
                         set_score.update(|score| {
                             *score = *score + get_score_single(word)
                         });
-                        set_words_found.update(|words_found| {*words_found = *words_found + words_clone.len()});
+                        set_words_found.update(|words_found| {words_found.push(make_word_with_key(word))});
                     }
 
                     // Slide all the blocks down.
@@ -480,6 +547,7 @@ fn App() -> impl IntoView {
     view! {
         <div class=styles::grid_container_container>
             <InfoModal display=show_intro_modal set_display=set_show_intro_modal/>
+            <EndModal display=display_end set_display=set_display_end words=words_found score=score/>
             <div class=styles::grid_container>
                 <For
                     each=grid
@@ -542,7 +610,7 @@ fn App() -> impl IntoView {
             // Words found + score
             <div class=styles::meta_container>
                 <div class=styles::left_meta>
-                <p class=styles::game_meta_text>"Words Found: "{move || words_found.get()}</p>
+                <p class=styles::game_meta_text>"Words Found: "{move || words_found.get().len()}</p>
                 </div>
                 <div class=styles::right_meta>
                     <p class=styles::game_meta_text>"Score: "{move || score.get()}</p>

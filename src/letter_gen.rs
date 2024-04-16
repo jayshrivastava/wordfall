@@ -86,7 +86,8 @@ impl Generator for LetterGenerator {
 }
 
 // "RWILEDD" recursion test case.
-const TEST_LETTERS: &str = "RWILEDD";
+// "CATDOGANDBUTFOR"
+const TEST_LETTERS: &str = "CATDOGANDBUTFOR";
 
 #[derive(Serialize, Deserialize)]
 pub struct TestGenerator {
@@ -105,6 +106,9 @@ impl Generator for TestGenerator {
 
    fn next_letter(&mut self) -> Option<char>{
       self.idx += 1;
+      if self.idx ==TEST_LETTERS.len()+1 {
+         return None
+      }
       return Some(TEST_LETTERS.chars().nth(self.idx - 1).unwrap())
    }
 
