@@ -225,6 +225,29 @@ fn App() -> impl IntoView {
         return false;
     };
 
+    let translate_idx = move |prev_idx: usize, next_idx: usize| -> bool {
+        return grid.with(|blocks| {
+            if blocks[next_idx].val.get() != EMPTY {
+                return false
+            }
+            let prev = blocks[prev_idx].val.get();
+            blocks[prev_idx].val.update(|val| *val = EMPTY);
+            blocks[next_idx].val.update(|val| *val = prev);
+            return true;
+        });
+    };
+
+    let up_idx = move |block_num: usize| -> bool {
+        let mut i = block_num;
+        grid.with(move |blocks| {
+            while i+GRID_WIDTH < GRID_SIZE && blocks[i+GRID_WIDTH].val.get() == EMPTY {
+                i = i + GRID_WIDTH;
+            }
+            translate_idx(block_num, i);
+        });
+        return false;
+    };
+
     let check_for_words = move || {
         set_checking(true);
 
@@ -294,6 +317,7 @@ fn App() -> impl IntoView {
                 let words_clone = words.clone();
                 if !found_words {
                     set_checking(false);
+                    spawn();
                     return
                 }
                 set_timeout(move || {
@@ -320,7 +344,13 @@ fn App() -> impl IntoView {
                         set_words_found.update(|words_found| {*words_found = *words_found + words_clone.len()});
                     }
 
+                    // Slide all the blocks down.
+                    for i in (0..GRID_SIZE).rev() {
+                        up_idx(i);
+                    }
+
                     set_checking(false);
+                    spawn();
                 }, Duration::from_millis(500));
             });
         });
@@ -344,7 +374,6 @@ fn App() -> impl IntoView {
         if !moved && (code == KEY_S || code == KEY_W ||
             code == ARR_D || code == ARR_U) {
             check_for_words();
-            spawn();
         }
     };
 
