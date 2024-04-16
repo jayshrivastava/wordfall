@@ -4,12 +4,14 @@ lines = f.readlines()[2:]
 
 # Process each line
 newlines = []
-for i, line in enumerate(lines[:25000]):
+for i, line in enumerate(lines):
    line = line.strip()
    add = True
    for c in line:
        if not (c.isalpha() and c.upper() >= "A" and c.upper() <= "Z"):
             add = False
+   if len(line) > 7:
+       add = False
 
    if not add:
        continue
