@@ -127,7 +127,7 @@ fn InfoModal(display: ReadSignal<bool>, set_display: WriteSignal<bool>) -> impl 
             >
                 close
             </p>
-            <img src="./../img/info2.png"> </img>
+            <img src="./../img/info3.png"> </img>
             <br/>
             <ModalFooter/>
         </div>
