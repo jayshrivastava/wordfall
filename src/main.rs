@@ -230,6 +230,7 @@ fn App() -> impl IntoView {
         set_score.update(|s| {*s = 0});
         set_last_words.update(|lw| { *lw = vec![]});
         set_words_found.update(|wf| { *wf = vec![]});
+        set_show_intro_modal.update(|i| {*i = true});
         set_display_end.update(|disp| { *disp = ""});
     };
 
@@ -291,9 +292,7 @@ fn App() -> impl IntoView {
     };
 
     // Load initial state if it exists.
-    create_effect(move |_| {
-       load_state();
-    });
+    load_state();
 
     let save_state = move || {
         let storage = gloo_storage::LocalStorage::raw();
