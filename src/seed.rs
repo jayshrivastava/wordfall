@@ -15,7 +15,6 @@ pub fn get_seed() -> [u8; 32] {
     if year == 2024 && month == 4 && day == 17 {
         year = 4025
     }
-    log!("{}{}{}", year, month, day);
     let seed: [u32; 8] = [year, month, day, 0, 0, 0, 0, 0];
     let mut seed_bytes = [0u8; 32];
     for (i, &n) in seed.iter().enumerate() {
