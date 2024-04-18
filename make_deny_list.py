@@ -20,10 +20,10 @@ for i, line in enumerate(lines):
     line = line.strip().lower()
     if not line.isalpha():
         continue
-    if not (len(line) > 2 and len(line) < 4):
+    if not (len(line) > 3 and len(line) < 5):
         continue
-    if line.lower() not in words:
+    if line.lower() not in words and line[:3] not in words:
         newlines.append(line)
 
-with open("words_deny_list.txt", "w") as f:
+with open("words_deny_list_2.txt", "w") as f:
     f.write('\n'.join(newlines))

@@ -1,7 +1,14 @@
 # Process each line
 deny_words = []
-deny_f = open("words_deny_list.txt")
+deny_f = open("words_deny_list_3.txt")
 deny_lines_raw = deny_f.readlines()
+for i, line in enumerate(deny_lines_raw):
+    if len(line) > 0:
+        deny_words.append(line.strip().upper())
+deny_f.close()
+
+deny_f_2 = open("words_deny_list_4.txt")
+deny_lines_raw = deny_f_2.readlines()
 for i, line in enumerate(deny_lines_raw):
     if len(line) > 0:
         deny_words.append(line.strip().upper())
