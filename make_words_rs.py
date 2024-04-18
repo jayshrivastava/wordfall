@@ -1,17 +1,11 @@
 # Process each line
 deny_words = []
-deny_f = open("words_deny_list_3.txt")
+deny_f = open("words_deny_list.txt")
 deny_lines_raw = deny_f.readlines()
 for i, line in enumerate(deny_lines_raw):
     if len(line) > 0:
         deny_words.append(line.strip().upper())
 deny_f.close()
-
-deny_f_2 = open("words_deny_list_4.txt")
-deny_lines_raw = deny_f_2.readlines()
-for i, line in enumerate(deny_lines_raw):
-    if len(line) > 0:
-        deny_words.append(line.strip().upper())
 
 f = open("words.txt")
 # Split the string by newline character
@@ -25,8 +19,10 @@ for i, line in enumerate(lines):
    for c in line:
        if not (c.isalpha() and c.upper() >= "A" and c.upper() <= "Z"):
             add = False
+
    if len(line) > 7 or len(line) < 3:
        add = False
+
    if line.upper() in deny_words:
        add = False
 
