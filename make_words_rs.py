@@ -1,4 +1,4 @@
-# Process each line
+# get deny list
 deny_words = []
 deny_f = open("words_deny_list.txt")
 deny_lines_raw = deny_f.readlines()
@@ -7,11 +7,20 @@ for i, line in enumerate(deny_lines_raw):
         deny_words.append(line.strip().upper())
 deny_f.close()
 
+# iterate through all words + extra words
 f = open("words.txt")
-# Split the string by newline character
 lines = f.readlines()[2:]
 
+extra_words = []
+extra_f = open("words_extra.txt")
+extra_lines_raw = extra_f.readlines()
+for i, line in enumerate(extra_lines_raw):
+    if len(line) > 0:
+        lines.append(line)
+extra_f.close()
+
 # Process each line
+lines.sort()
 newlines = []
 for i, line in enumerate(lines):
    line = line.strip()
