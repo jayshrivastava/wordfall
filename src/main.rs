@@ -26,7 +26,7 @@ const GRID_WIDTH: usize = 9;
 const GRID_HEIGHT: usize = 9;
 const GRID_SIZE: usize =GRID_WIDTH * GRID_HEIGHT;
 
-const LOOKAHEAD: usize = 4;
+const LOOKAHEAD: usize = 3;
 
 const LAST_WORDS_WINDOW: usize= 3;
 

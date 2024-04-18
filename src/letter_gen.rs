@@ -8,7 +8,7 @@ pub struct LetterGenerator {
    chars: Vec<char>,
    seq: usize,
 }
-const WORD_COUNT: usize = 12;
+const WORD_COUNT: usize = 10;
 
 pub const MIN_WORD_SIZE: usize = 3;
 
