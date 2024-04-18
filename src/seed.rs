@@ -12,8 +12,8 @@ pub fn get_seed() -> [u8; 32] {
     // let second = current_date.second();
 
     // Concatenate the date components to form the seed value
-    if year == 2024 && month == 4 && day == 17 {
-        year = 4025
+    if year == 2024 && month == 4 && day == 18 {
+        year = 5025
     }
     let seed: [u32; 8] = [year, month, day, 0, 0, 0, 0, 0];
     let mut seed_bytes = [0u8; 32];
