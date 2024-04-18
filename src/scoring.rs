@@ -39,5 +39,14 @@ pub fn get_score_single(word: &str) -> u32 {
     for c in word.chars() {
         sc += SCRABBLE_POINTS.get(&c).unwrap()
     }
+    if word.len() == 4 {
+        sc += 1;
+    } else if word.len() == 5 {
+        sc += 3;
+    } else if word.len() == 6 {
+        sc += 5;
+    } else if word.len() == 7 {
+        sc += 7;
+    }
     return sc
 }
