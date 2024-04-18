@@ -356,7 +356,8 @@ fn App() -> impl IntoView {
                     let next = g.next_letter();
                     if next.is_none() {
                         // Win condition
-                        set_display_end.update(|d| {*d = "won"})
+                        set_display_end.update(|d| {*d = "won"});
+                        return
                     }
                     *val = next.unwrap();
                     set_game_meta_text.update(|nl| *nl = g.next_n_letters(LOOKAHEAD));
